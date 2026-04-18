@@ -1,0 +1,34 @@
+---
+- name: Move backup data to new location
+  hosts: all
+  become: yes
+  vars:
+    src_dir: /export/images/nfsinfo/backups
+    dest_dir: /images/backup/backups
+
+  tasks:
+
+    - name: Ensure destination directory exists
+      file:
+        path: "{{ dest_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Check if source directory exists
+      stat:
+        path: "{{ src_dir }}"
+      register: src_status
+
+    - name: Move backup data
+      command: mv {{ src_dir }}/* {{ dest_dir }}/
+      when: src_status.stat.exists
+      args:
+        removes: "{{ src_dir }}/*"
+
+    - name: Verify files moved
+      command: ls -l {{ dest_dir }}
+      register: verify_output
+
+    - name: Show moved files
+      debug:
+        var: verify_output.stdout_lines
